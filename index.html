@@ -10,8 +10,10 @@
     <main class="mx-auto max-w-7xl h-screen">
       <div class="m-8">
         <h1 class="text-3xl font-bold text-cyan-900">Mandelbrot tree</h1>
-        <h1 class="text-xl font-light text-cyan-700">ruby.wasm version <span id="ruby-version" class="italic"></span> </h1>
-        <canvas id="canvas" width="130" height="100"></canvas>
+        <h2 id="ruby-version" class="text-xl font-light text-cyan-700 mb-2"></h2>
+        <canvas id="canvas" width="130" height="100">
+        </canvas>
+        <p id="message" class="text-sm font-light italic mt-2">Processing ruby.wasm...</p>
       </div>
     </main>
     <script type="text/ruby">
@@ -50,7 +52,7 @@ end
       require "js"
 
       document = JS.global[:document]
-      document.getElementById("ruby-version")[:innerText] = RUBY_VERSION
+      document.getElementById("ruby-version")[:innerText] = "ruby.wasm v#{RUBY_VERSION}"
 
       canvas = document.getElementById("canvas")
       width = canvas.getAttribute("width").to_i
@@ -58,33 +60,30 @@ end
       ctx = canvas.getContext("2d")
 
       start_time = Time.now
-      puts "Generating Mandelbrot"
       points = Mandelbrot.calc(width, height, 1000, -2.0, 1.0, -1.0, 1.0)
       pixels = points.flat_map do |value|
         case value
-        when 0..2
-          [112, 195, 246, 120]
-        when 3..5
-          [112, 195, 246, 255]
+        when 0..5
+          [236, 110, 65, 255]
         when 6..10
-          [145, 159, 210, 255]
+          [236, 110, 65, 255]
         when 11..30
-          [161, 141, 191, 255]
+          [233, 73, 52, 255]
         when 31..100
-          [184, 116, 165, 255]
+          [223, 60, 57, 255]
         when 101..200
-          [195, 103, 153, 255]
+          [202, 60, 81, 255]
         when 201..400
-          [215, 80, 130, 255]
+          [184, 61, 102, 255]
         when 401..700
-          [226, 67, 116, 255]
+          [160, 61, 130, 255]
         else
-          [226, 67, 116, 255]
+          [124, 62, 171, 255]
         end
       end
       image_data = JS.eval("return new ImageData(new Uint8ClampedArray([#{pixels.join(",")}]), #{width}, #{height});")
       ctx.putImageData(image_data, 0, 0)
 
-      puts "Elapsed time: #{Time.now - start_time} seconds"
+      document.getElementById("message")[:innerText] = "Elapsed time: #{Time.now - start_time} seconds"
     </script>
 </html>
