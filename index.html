@@ -10,39 +10,26 @@
     <main class="mx-auto max-w-7xl h-screen">
       <div class="m-8">
         <h1 class="text-3xl font-bold text-cyan-900">Mandelbrot tree</h1>
-        <h1 class="text-xl font-light text-cyan-700">Only with ruby.wasm</h1>
-        <div id="plain-canvas"></div>
-        <canvas id="canvas" width="800" height="600"></canvas>
+        <h1 class="text-xl font-light text-cyan-700">ruby.wasm version <span id="ruby-version" class="italic"></span> </h1>
+        <canvas id="canvas" width="130" height="100"></canvas>
       </div>
     </main>
     <script type="text/ruby">
 module Mandelbrot
   module_function
 
-  def generate
-    mandelbot = calculate(1000, -2.0, 1.0, -1.0, 1.0, 100, 24)
-
-    mandelbot.each do |row|
-      line = ""
-      row.each do |col|
-        line << ascii_value(col)
-      end
-      yield(line)
-    end
-  end
-
-  def calculate(max_iterations, x_min, x_max, y_min, y_max, width, height)
-    mandelbot = Array.new(height) { Array.new(width) }
+  def calc(width, height, max_iterations = 1000, x_min = -2.0, x_max = 1.0, y_min = -1.0, y_max = 1.0)
+    points = []
     height.times do |y|
       width.times do |x|
         x_percent = x.to_f / width.to_f
         y_percent = y.to_f / height.to_f
         cx = x_min + (x_max - x_min) * x_percent
         cy = y_min + (y_max - y_min) * y_percent
-        mandelbot[y][x] = mandelbot_point(cx, cy, max_iterations)
+        points << mandelbot_point(cx, cy, max_iterations)
       end
     end
-    mandelbot
+    points
   end
 
   def mandelbot_point(cx, cy, max_iterations)
@@ -50,49 +37,54 @@ module Mandelbrot
     c = Complex(cx, cy)
 
     max_iterations.times do |n|
-      if z.abs > 2
-        return n
-      end
+      return n if z.abs > 2
+
       z = z * z + c
     end
 
     max_iterations
   end
-
-  def ascii_value(col)
-    case col
-    when 0..2
-      " "
-    when 3..5
-      "."
-    when 6..10
-      "•"
-    when 11..30
-      "*"
-    when 31..100
-      "+"
-    when 101..200
-      "x"
-    when 201..400
-      "$"
-    when 401..700
-      "#"
-    else
-      "%"
-    end
-  end
 end
     </script>
     <script type="text/ruby">
-      require 'js'
+      require "js"
 
       document = JS.global[:document]
-      canvas = document.getElementById("plain-canvas")
-      Mandelbrot.generate do |line|
-        node = document.createElement("p")
-        textnode = document.createTextNode("#{line}")
-        node.appendChild(textnode)
-        canvas.appendChild(node)
+      document.getElementById("ruby-version")[:innerText] = RUBY_VERSION
+
+      canvas = document.getElementById("canvas")
+      width = canvas.getAttribute("width").to_i
+      height = canvas.getAttribute("height").to_i
+      ctx = canvas.getContext("2d")
+
+      start_time = Time.now
+      puts "Generating Mandelbrot"
+      points = Mandelbrot.calc(width, height, 1000, -2.0, 1.0, -1.0, 1.0)
+      pixels = points.flat_map do |value|
+        case value
+        when 0..2
+          [112, 195, 246, 120]
+        when 3..5
+          [112, 195, 246, 255]
+        when 6..10
+          [145, 159, 210, 255]
+        when 11..30
+          [161, 141, 191, 255]
+        when 31..100
+          [184, 116, 165, 255]
+        when 101..200
+          [195, 103, 153, 255]
+        when 201..400
+          [215, 80, 130, 255]
+        when 401..700
+          [226, 67, 116, 255]
+        else
+          [226, 67, 116, 255]
+        end
       end
+      image_data = JS.eval("return new ImageData(new Uint8ClampedArray([#{pixels.join(",")}]), #{width}, #{height});")
+      ctx.putImageData(image_data, 0, 0)
+
+      puts "Elapsed time: #{Time.now - start_time} seconds"
     </script>
 </html>
