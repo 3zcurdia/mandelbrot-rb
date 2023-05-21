@@ -11,6 +11,7 @@
       <div class="m-8">
         <h1 class="text-3xl font-bold text-cyan-900">Mandelbrot tree</h1>
         <h1 class="text-xl font-light text-cyan-700">Only with ruby.wasm</h1>
+        <div id="plain-canvas"></div>
         <canvas id="canvas" width="800" height="600"></canvas>
       </div>
     </main>
@@ -18,7 +19,7 @@
 module Mandelbrot
   module_function
 
-  def run
+  def generate
     mandelbot = calculate(1000, -2.0, 1.0, -1.0, 1.0, 100, 24)
 
     mandelbot.each do |row|
@@ -26,7 +27,7 @@ module Mandelbrot
       row.each do |col|
         line << ascii_value(col)
       end
-      puts line
+      yield(line)
     end
   end
 
@@ -82,5 +83,16 @@ module Mandelbrot
   end
 end
     </script>
-    <script type="text/ruby">Mandelbrot.run</script>
+    <script type="text/ruby">
+      require 'js'
+
+      document = JS.global[:document]
+      canvas = document.getElementById("plain-canvas")
+      Mandelbrot.generate do |line|
+        node = document.createElement("p")
+        textnode = document.createTextNode("#{line}")
+        node.appendChild(textnode)
+        canvas.appendChild(node)
+      end
+    </script>
 </html>
