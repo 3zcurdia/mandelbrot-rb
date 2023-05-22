@@ -2,88 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>Mandelbrot WASI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>mandelbrot.rb</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
     <script src="https://cdn.jsdelivr.net/npm/ruby-3_2-wasm-wasi@2.0.0/dist/browser.script.iife.js"></script>
   </head>
-  <body class="bg-slate-100">
-    <main class="mx-auto max-w-7xl h-screen">
-      <div class="m-8">
-        <h1 class="text-3xl font-bold text-cyan-900">Mandelbrot tree</h1>
-        <h2 id="ruby-version" class="text-xl font-light text-cyan-700 mb-2"></h2>
-        <canvas id="canvas" width="130" height="100">
-        </canvas>
-        <p id="message" class="text-sm font-light italic mt-2">Processing ruby.wasm...</p>
-      </div>
+  <body>
+    <main class="container">
+      <h1>💎 mandelbrot.rb</h1>
+      <canvas id="canvas" width="130" height="100"></canvas>
+      <p id="message">Processing ruby.wasm...</p>
     </main>
-    <script type="text/ruby">
-module Mandelbrot
-  module_function
-
-  def calc(width, height, max_iterations = 1000, x_min = -2.0, x_max = 1.0, y_min = -1.0, y_max = 1.0)
-    points = []
-    height.times do |y|
-      width.times do |x|
-        x_percent = x.to_f / width.to_f
-        y_percent = y.to_f / height.to_f
-        cx = x_min + (x_max - x_min) * x_percent
-        cy = y_min + (y_max - y_min) * y_percent
-        points << mandelbot_point(cx, cy, max_iterations)
-      end
-    end
-    points
-  end
-
-  def mandelbot_point(cx, cy, max_iterations)
-    z = Complex(0, 0)
-    c = Complex(cx, cy)
-
-    max_iterations.times do |n|
-      return n if z.abs > 2
-
-      z = z * z + c
-    end
-
-    max_iterations
-  end
-end
-    </script>
+    <script type="text/ruby" src="./lib/mandelbrot/generator.rb"></script>
+    <script type="text/ruby" src="./lib/mandelbrot/pixels.rb"></script>
     <script type="text/ruby">
       require "js"
 
       document = JS.global[:document]
-      document.getElementById("ruby-version")[:innerText] = "ruby.wasm v#{RUBY_VERSION}"
-
       canvas = document.getElementById("canvas")
       width = canvas.getAttribute("width").to_i
       height = canvas.getAttribute("height").to_i
       ctx = canvas.getContext("2d")
 
       start_time = Time.now
-      points = Mandelbrot.calc(width, height, 1000, -2.0, 1.0, -1.0, 1.0)
-      pixels = points.flat_map do |value|
-        case value
-        when 0..5
-          [236, 110, 65, 255]
-        when 6..10
-          [236, 110, 65, 255]
-        when 11..30
-          [233, 73, 52, 255]
-        when 31..100
-          [223, 60, 57, 255]
-        when 101..200
-          [202, 60, 81, 255]
-        when 201..400
-          [184, 61, 102, 255]
-        when 401..700
-          [160, 61, 130, 255]
-        else
-          [124, 62, 171, 255]
-        end
-      end
+      pixels = Mandelbrot::Pixels.new(width: width, height: height).render
       image_data = JS.eval("return new ImageData(new Uint8ClampedArray([#{pixels.join(",")}]), #{width}, #{height});")
       ctx.putImageData(image_data, 0, 0)
 
-      document.getElementById("message")[:innerText] = "Elapsed time: #{Time.now - start_time} seconds"
+      document.getElementById("message")[:innerText] = "#{RUBY_DESCRIPTION}\nElapsed time: #{Time.now - start_time} seconds"
     </script>
 </html>
